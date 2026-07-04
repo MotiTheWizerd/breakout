@@ -25,8 +25,13 @@ export const MAX_LEVEL = 6
 export const GIFT_W = 36
 export const GIFT_H = 22
 export const GIFT_FALL_SPEED = 155
-export const GIFT_DROP_CHANCE = 0.9 // per destroyed brick — cranked up for testing (real value ~0.16)
+export const GIFT_DROP_CHANCE = 0.38 // per destroyed brick (bumped +20pts for testing; normal ~0.18)
 export const GUN_DURATION = 10 // seconds of shooting
 export const BULLET_SPEED = 640
 export const BULLET_R = 4
 export const FIRE_INTERVAL = 0.26 // seconds between shots while armed
+
+// multiball
+export const MULTIBALL_ADD = 2 // extra balls spawned on catch
+export const MAX_BALLS = 7
+export const MULTIBALL_SPREAD = (24 * Math.PI) / 180 // fan angle between spawned balls

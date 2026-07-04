@@ -5,6 +5,7 @@ import {
   BRICK_H, START_LIVES, MAX_LEVEL,
   GIFT_W, GIFT_H, GIFT_FALL_SPEED, GIFT_DROP_CHANCE, GUN_DURATION,
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
+  MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
 } from './constants'
 import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -26,7 +27,7 @@ export class BreakoutEngine {
   highScore = 0
 
   paddle: Paddle
-  ball: Ball
+  balls: Ball[] = []
   bricks: Brick[] = []
   gifts: Gift[] = []
   bullets: Bullet[] = []
@@ -54,7 +55,7 @@ export class BreakoutEngine {
       h: PADDLE_H,
       y: HEIGHT - PADDLE_MARGIN,
     }
-    this.ball = { x: WIDTH / 2, y: this.paddle.y - BALL_R - 1, vx: 0, vy: 0, r: BALL_R }
+    this.balls = [{ x: WIDTH / 2, y: this.paddle.y - BALL_R - 1, vx: 0, vy: 0, r: BALL_R }]
     this.highScore = this.loadHighScore()
     this.buildLevel()
   }
@@ -116,12 +117,15 @@ export class BreakoutEngine {
     this.fireCooldown = 0
   }
 
-  /** Reset ball to rest on the paddle, awaiting launch. */
+  /** Reset to a single ball resting on the paddle, awaiting launch. */
   private parkBall() {
-    this.ball.x = this.paddle.x
-    this.ball.y = this.paddle.y - this.ball.r - 1
-    this.ball.vx = 0
-    this.ball.vy = 0
+    this.balls = [{
+      x: this.paddle.x,
+      y: this.paddle.y - BALL_R - 1,
+      vx: 0,
+      vy: 0,
+      r: BALL_R,
+    }]
   }
 
   // ---- public control API ----
@@ -143,8 +147,9 @@ export class BreakoutEngine {
     if (this.status === 'ready') {
       const speed = this.ballSpeed()
       const angle = (-Math.PI / 2) + (Math.random() * 0.6 - 0.3) // mostly up, slight jitter
-      this.ball.vx = Math.cos(angle) * speed
-      this.ball.vy = Math.sin(angle) * speed
+      const b = this.balls[0]
+      b.vx = Math.cos(angle) * speed
+      b.vy = Math.sin(angle) * speed
       this.status = 'playing'
     } else if (this.status === 'levelclear') {
       this.level += 1
@@ -190,14 +195,15 @@ export class BreakoutEngine {
     this.updatePaddle(dt)
 
     if (this.status === 'ready') {
-      // ball tracks the paddle until launched
-      this.ball.x = this.paddle.x
-      this.ball.y = this.paddle.y - this.ball.r - 1
+      // the parked ball tracks the paddle until launched
+      const b = this.balls[0]
+      b.x = this.paddle.x
+      b.y = this.paddle.y - b.r - 1
       return
     }
     if (this.status !== 'playing') return
 
-    this.updateBall(dt)
+    this.updateBalls(dt)
     if (this.status !== 'playing') return // ball update may have ended level/game
 
     this.updateTimers(dt)
@@ -218,49 +224,53 @@ export class BreakoutEngine {
     this.paddle.x = Math.max(half, Math.min(WIDTH - half, this.paddle.x))
   }
 
-  private updateBall(dt: number) {
-    const b = this.ball
-    // Sub-step to avoid tunnelling at high speed.
-    const speed = Math.hypot(b.vx, b.vy)
-    const steps = Math.max(1, Math.ceil((speed * dt) / (b.r * 0.9)))
-    const h = dt / steps
-    for (let i = 0; i < steps; i++) {
-      b.x += b.vx * h
-      b.y += b.vy * h
-      this.collideWalls()
-      this.collidePaddle()
-      if (this.collideBricks()) {
-        if (this.bricks.every((br) => !br.alive)) {
-          this.onLevelCleared()
-          return
+  private updateBalls(dt: number) {
+    for (const b of this.balls) {
+      // Sub-step to avoid tunnelling at high speed.
+      const speed = Math.hypot(b.vx, b.vy)
+      const steps = Math.max(1, Math.ceil((speed * dt) / (b.r * 0.9)))
+      const h = dt / steps
+      for (let i = 0; i < steps; i++) {
+        b.x += b.vx * h
+        b.y += b.vy * h
+        if (this.collideWalls(b)) break // fell off the bottom
+        this.collidePaddle(b)
+        if (this.collideBricks(b)) {
+          if (this.bricks.every((br) => !br.alive)) {
+            this.onLevelCleared()
+            return
+          }
         }
       }
-      if (this.status !== 'playing') return
     }
+    // remove balls that fell; only lose a life when the last one is gone
+    this.balls = this.balls.filter((b) => !b.dead)
+    if (this.balls.length === 0) this.loseLife()
   }
 
-  private collideWalls() {
-    const b = this.ball
+  /** Returns true if the ball fell off the bottom (and should be removed). */
+  private collideWalls(b: Ball): boolean {
     if (b.x - b.r < 0) {
       b.x = b.r
       b.vx = Math.abs(b.vx)
-      this.onEvent('wall')
+      this.onEvent('wall', b.x, b.y)
     } else if (b.x + b.r > WIDTH) {
       b.x = WIDTH - b.r
       b.vx = -Math.abs(b.vx)
-      this.onEvent('wall')
+      this.onEvent('wall', b.x, b.y)
     }
     if (b.y - b.r < 0) {
       b.y = b.r
       b.vy = Math.abs(b.vy)
-      this.onEvent('wall')
+      this.onEvent('wall', b.x, b.y)
     } else if (b.y - b.r > HEIGHT) {
-      this.loseLife()
+      b.dead = true
+      return true
     }
+    return false
   }
 
-  private collidePaddle() {
-    const b = this.ball
+  private collidePaddle(b: Ball) {
     const p = this.paddle
     const half = p.w / 2
     const withinX = b.x >= p.x - half - b.r && b.x <= p.x + half + b.r
@@ -273,13 +283,12 @@ export class BreakoutEngine {
       b.vx = Math.sin(angle) * speed
       b.vy = -Math.cos(angle) * speed
       b.y = p.y - b.r - 0.1
-      this.onEvent('paddle')
+      this.onEvent('paddle', b.x, b.y)
     }
   }
 
   /** Returns true if a brick was hit this call. */
-  private collideBricks(): boolean {
-    const b = this.ball
+  private collideBricks(b: Ball): boolean {
     for (const br of this.bricks) {
       if (!br.alive) continue
       // circle vs AABB
@@ -321,10 +330,13 @@ export class BreakoutEngine {
     }
   }
 
+  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball']
+  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190 }
+
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
-    // only 'gun' exists for now; extend this pick as more types are added
-    const type: PowerUpType = 'gun'
+    const pool = BreakoutEngine.GIFT_POOL
+    const type = pool[Math.floor(Math.random() * pool.length)]
     this.gifts.push({
       x: br.x + br.w / 2 - GIFT_W / 2,
       y: br.y,
@@ -332,7 +344,7 @@ export class BreakoutEngine {
       h: GIFT_H,
       vy: GIFT_FALL_SPEED,
       type,
-      hue: 45, // gold
+      hue: BreakoutEngine.GIFT_HUE[type],
     })
   }
 
@@ -340,7 +352,33 @@ export class BreakoutEngine {
     if (type === 'gun') {
       this.timers.set('gun', GUN_DURATION)
       this.fireCooldown = 0 // fire immediately
+    } else if (type === 'multiball') {
+      this.spawnMultiball()
     }
+  }
+
+  /** Split the current balls into more, fanned out at fresh angles. */
+  private spawnMultiball() {
+    const source = this.balls.filter((b) => !b.dead)
+    if (source.length === 0) return
+    const added: Ball[] = []
+    for (const src of source) {
+      const speed = Math.max(Math.hypot(src.vx, src.vy), this.ballSpeed())
+      const baseAngle = Math.atan2(src.vy, src.vx)
+      for (let i = 1; i <= MULTIBALL_ADD; i++) {
+        if (this.balls.length + added.length >= MAX_BALLS) break
+        const dir = i % 2 === 0 ? 1 : -1
+        const angle = baseAngle + dir * MULTIBALL_SPREAD * Math.ceil(i / 2)
+        added.push({
+          x: src.x,
+          y: src.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: src.r,
+        })
+      }
+    }
+    this.balls.push(...added)
   }
 
   private updateTimers(dt: number) {

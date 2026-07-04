@@ -17,6 +17,7 @@ export interface Ball {
   vx: number
   vy: number
   r: number
+  dead?: boolean // marked when it falls off the bottom
 }
 
 export interface Paddle {
@@ -26,7 +27,7 @@ export interface Paddle {
   y: number // top y
 }
 
-export type PowerUpType = 'gun'
+export type PowerUpType = 'gun' | 'multiball'
 
 export interface Gift {
   x: number // left

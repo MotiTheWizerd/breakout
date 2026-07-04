@@ -99,13 +99,23 @@ export function render(
     ctx.fillStyle = grad
     roundRect(ctx, g.x, g.y, g.w, g.h, 6)
     ctx.fill()
-    // icon: a little cannon glyph for the 'gun' gift
+    // per-type icon
     ctx.shadowBlur = 0
-    ctx.fillStyle = '#20110a'
+    ctx.fillStyle = '#0c1418'
     const cx = g.x + g.w / 2
     const cy = g.y + g.h / 2
-    ctx.fillRect(cx - 6, cy - 1, 12, 4) // barrel base
-    ctx.fillRect(cx - 2, cy - 6, 4, 8) // muzzle up
+    if (g.type === 'gun') {
+      ctx.fillStyle = '#20110a'
+      ctx.fillRect(cx - 6, cy - 1, 12, 4) // barrel base
+      ctx.fillRect(cx - 2, cy - 6, 4, 8) // muzzle up
+    } else {
+      // multiball: three little balls
+      for (const dx of [-7, 0, 7]) {
+        ctx.beginPath()
+        ctx.arc(cx + dx, cy, 3, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
     ctx.restore()
   }
 
@@ -136,17 +146,18 @@ export function render(
   }
   ctx.restore()
 
-  // ball
-  const b = engine.ball
-  ctx.save()
-  ctx.shadowColor = 'rgba(255, 255, 255, 0.95)'
-  ctx.shadowBlur = 20
-  const bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r)
-  bg.addColorStop(0, '#ffffff')
-  bg.addColorStop(1, '#ff2d95')
-  ctx.fillStyle = bg
-  ctx.beginPath()
-  ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
+  // balls
+  for (const b of engine.balls) {
+    ctx.save()
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.95)'
+    ctx.shadowBlur = 20
+    const bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r)
+    bg.addColorStop(0, '#ffffff')
+    bg.addColorStop(1, '#ff2d95')
+    ctx.fillStyle = bg
+    ctx.beginPath()
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
 }
