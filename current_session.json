@@ -1,0 +1,10 @@
+{
+  "session_number": 183,
+  "session_count": 5,
+  "date": "2026-07-04",
+  "start_time": "06:53",
+  "status": "in_progress",
+  "project": "PINGBALL — Breakout (React 19 + Vite 8 + TS, canvas)",
+  "notes": "Previous current_session.json + entire source tree were wiped before this session (only node_modules survived). Recreated fresh. Rebuilt Breakout from scratch this session.",
+  "authors": ["Moti", "Claude"]
+}

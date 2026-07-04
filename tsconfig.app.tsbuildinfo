@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/Hud.tsx","./src/components/Overlay.tsx","./src/game/constants.ts","./src/game/engine.ts","./src/game/particles.ts","./src/game/render.ts","./src/game/sound.ts","./src/game/types.ts","./src/hooks/useBreakout.ts"],"version":"5.9.3"}
