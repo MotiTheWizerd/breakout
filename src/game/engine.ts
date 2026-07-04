@@ -352,13 +352,30 @@ export class BreakoutEngine {
     }
   }
 
-  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow', 'shrink', 'fireball', 'net', 'life']
   private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275, shrink: 2, fireball: 18, net: 210, life: 330 }
+
+  // Relative drop weights: routine buffs common, flashy/premium gifts rare, the
+  // skull present but not overwhelming. Each type's chance = weight / total (below).
+  //   gun ~15%  wide ~15%  slow ~13%  skull ~11%  net ~9%  multi ~8%  fire ~7%  life ~5%
+  private static readonly GIFT_WEIGHT: Record<PowerUpType, number> = {
+    gun: 16, wide: 16, slow: 14, shrink: 12, net: 10, multiball: 8, fireball: 7, life: 5,
+  }
+
+  /** Weighted random gift type (see GIFT_WEIGHT). */
+  private pickGiftType(): PowerUpType {
+    const entries = Object.entries(BreakoutEngine.GIFT_WEIGHT) as [PowerUpType, number][]
+    const total = entries.reduce((s, [, w]) => s + w, 0)
+    let roll = Math.random() * total
+    for (const [type, w] of entries) {
+      roll -= w
+      if (roll < 0) return type
+    }
+    return entries[0][0] // fallback (unreachable)
+  }
 
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
-    const pool = BreakoutEngine.GIFT_POOL
-    const type = pool[Math.floor(Math.random() * pool.length)]
+    const type = this.pickGiftType()
     this.gifts.push({
       x: br.x + br.w / 2 - GIFT_W / 2,
       y: br.y,
