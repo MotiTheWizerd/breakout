@@ -13,15 +13,66 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath()
 }
 
-function drawBackground(ctx: CanvasRenderingContext2D, t: number) {
-  ctx.fillStyle = '#090014'
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
+interface LevelTheme {
+  skyTop: string
+  skyBot: string
+  grid: string
+  sunA: string // sun top
+  sunB: string // sun bottom
+}
 
-  // subtle perspective grid floor for the outrun vibe
-  ctx.save()
-  ctx.strokeStyle = 'rgba(255, 45, 149, 0.10)'
-  ctx.lineWidth = 1
+// One outrun palette per level — the eye gets a fresh vibe each stage, ramping
+// from calm magenta dusk toward a crimson "danger" final level. Cycles if the
+// level count ever exceeds the theme count.
+const LEVEL_THEMES: LevelTheme[] = [
+  { skyTop: '#0a0016', skyBot: '#1e0330', grid: 'rgba(255, 45, 149, 0.15)', sunA: '#ff2d95', sunB: '#ff8a3d' }, // 1 magenta dusk
+  { skyTop: '#00131a', skyBot: '#022c37', grid: 'rgba(0, 231, 255, 0.15)', sunA: '#00e7ff', sunB: '#7dfff0' }, // 2 cyan night
+  { skyTop: '#0c0020', skyBot: '#26094e', grid: 'rgba(150, 90, 255, 0.16)', sunA: '#a06bff', sunB: '#ff6bd6' }, // 3 violet void
+  { skyTop: '#1a0700', skyBot: '#331402', grid: 'rgba(255, 150, 40, 0.15)', sunA: '#ffcf3d', sunB: '#ff5a2b' }, // 4 sunset amber
+  { skyTop: '#02160a', skyBot: '#053315', grid: 'rgba(80, 255, 130, 0.15)', sunA: '#5dff8c', sunB: '#d4ff3d' }, // 5 acid green
+  { skyTop: '#180003', skyBot: '#33000c', grid: 'rgba(255, 60, 90, 0.18)', sunA: '#ff3c5a', sunB: '#ff9a1f' }, // 6 crimson danger
+]
+
+function drawBackground(ctx: CanvasRenderingContext2D, t: number, level: number) {
+  const theme = LEVEL_THEMES[(level - 1) % LEVEL_THEMES.length]
   const horizon = HEIGHT * 0.62
+
+  // sky gradient above the horizon, deep void below
+  const sky = ctx.createLinearGradient(0, 0, 0, horizon)
+  sky.addColorStop(0, theme.skyTop)
+  sky.addColorStop(1, theme.skyBot)
+  ctx.fillStyle = sky
+  ctx.fillRect(0, 0, WIDTH, horizon)
+  ctx.fillStyle = '#05000c'
+  ctx.fillRect(0, horizon, WIDTH, HEIGHT - horizon)
+
+  // outrun sun sitting on the horizon (gradient disc + slit lines)
+  const sunR = 92
+  const sunY = horizon - 4
+  ctx.save()
+  ctx.shadowColor = theme.sunA
+  ctx.shadowBlur = 60
+  ctx.beginPath()
+  ctx.arc(WIDTH / 2, sunY, sunR, 0, Math.PI * 2)
+  ctx.clip()
+  const sg = ctx.createLinearGradient(0, sunY - sunR, 0, sunY + sunR)
+  sg.addColorStop(0, theme.sunA)
+  sg.addColorStop(1, theme.sunB)
+  ctx.fillStyle = sg
+  ctx.fillRect(WIDTH / 2 - sunR, sunY - sunR, sunR * 2, sunR * 2)
+  // horizontal slits across the lower half — cut with the sky color so the
+  // bands read as gaps, widening toward the horizon (classic sunset look)
+  ctx.fillStyle = theme.skyBot
+  for (let i = 0; i < 8; i++) {
+    const yy = sunY + 6 + i * 8
+    ctx.fillRect(WIDTH / 2 - sunR, yy, sunR * 2, 2 + i * 0.9)
+  }
+  ctx.restore()
+
+  // perspective grid floor for the outrun vibe
+  ctx.save()
+  ctx.strokeStyle = theme.grid
+  ctx.lineWidth = 1
   for (let i = 1; i <= 14; i++) {
     const p = i / 14
     const y = horizon + (HEIGHT - horizon) * p * p
@@ -47,7 +98,7 @@ export function render(
   particles: Particles,
   t: number,
 ) {
-  drawBackground(ctx, t)
+  drawBackground(ctx, t, engine.level)
 
   // bricks
   for (const br of engine.bricks) {
