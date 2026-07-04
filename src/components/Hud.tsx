@@ -35,6 +35,11 @@ export function Hud({ snap, muted, onMute }: { snap: Snapshot; muted: boolean; o
           ))}
         </span>
       </div>
+      {snap.comboMult >= 2 && (
+        <span className="combo-pill">
+          COMBO <b>×{snap.comboMult}</b>
+        </span>
+      )}
       <div className="hud-powerups">
         {snap.powerups.map((pu) => (
           <span key={pu.type} className="powerup-badge">

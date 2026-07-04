@@ -2,7 +2,7 @@ import {
   WIDTH, HEIGHT, PADDLE_W, PADDLE_H, PADDLE_MARGIN, PADDLE_SPEED,
   BALL_R, BALL_BASE_SPEED, BALL_SPEED_PER_LEVEL, BALL_MAX_SPEED,
   MAX_BOUNCE_ANGLE, BRICK_COLS, BRICK_GAP, BRICK_TOP, BRICK_SIDE_PAD,
-  BRICK_H, START_LIVES, MAX_LIVES, MAX_LEVEL,
+  BRICK_H, START_LIVES, MAX_LIVES, MAX_LEVEL, COMBO_MAX,
   GIFT_W, GIFT_H, GIFT_FALL_SPEED, GIFT_DROP_CHANCE, GUN_DURATION,
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
@@ -43,6 +43,9 @@ export class BreakoutEngine {
   // power-up state
   private timers = new Map<PowerUpType, number>() // type -> seconds remaining
   private fireCooldown = 0
+
+  // combo — bricks broken in the current airborne chain (reset on paddle contact)
+  private combo = 0
 
   /** Fired when a scoring / feedback event happens, for sound + particles. */
   onEvent: (
@@ -118,6 +121,7 @@ export class BreakoutEngine {
     this.bullets = []
     this.timers.clear()
     this.fireCooldown = 0
+    this.combo = 0
     this.syncPaddleWidth() // clearing timers must restore base width
   }
 
@@ -186,6 +190,7 @@ export class BreakoutEngine {
       level: this.level,
       bricksLeft: this.bricks.reduce((n, b) => n + (b.alive ? 1 : 0), 0),
       highScore: this.highScore,
+      comboMult: Math.min(this.combo, COMBO_MAX),
       powerups: [...this.timers.entries()].map(([type, remaining]) => ({
         type,
         remaining: Math.ceil(remaining),
@@ -294,6 +299,7 @@ export class BreakoutEngine {
       b.vx = Math.sin(angle) * speed
       b.vy = -Math.cos(angle) * speed
       b.y = p.y - b.r - 0.1
+      this.combo = 0 // returning to the paddle breaks the chain
       this.onEvent('paddle', b.x, b.y)
     }
   }
@@ -344,7 +350,8 @@ export class BreakoutEngine {
     br.hp = shatter ? 0 : br.hp - 1
     if (br.hp <= 0) {
       br.alive = false
-      this.score += br.points
+      this.combo += 1
+      this.score += br.points * Math.min(this.combo, COMBO_MAX)
       this.onEvent('brick', atX, atY)
       this.maybeDropGift(br)
     } else {

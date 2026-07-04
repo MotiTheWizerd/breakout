@@ -6,18 +6,19 @@
   "end_time": null,
   "status": "active",
   "project": "PINGBALL — Breakout (React 19 + Vite 8 + TS, canvas)",
-  "summary": "Gift expansion session. Shipped 3 new power-ups on top of the existing gun+multiball, taking the set to FIVE. Introduced a derived-width paddle design (syncPaddleWidth: single source of truth) so timed width changes can never get stuck across expire/life-loss/level-clear. Wide paddle (200px/12s), Slow-Mo (ball dt scaled 0.5x for 8s, paddle stays full-speed), and the Skull — the bad gift (shrink 76px/8s, shrink>wide>base priority so it suppresses & resumes wide). Each gift is a clean drop-in: types union + GIFT_POOL/GIFT_HUE + applyPowerup case + HUD badge + render glyph. Moti playtested live mid-session (screenshot showed gun+wide+multiball all stacked). tsc -b + vite build green throughout. All committed + pushed.",
+  "summary": "Big build session on the gift SYSTEM + per-level theming. Grew the power-up set from 5 to 8 (fireball/piercing #6, safety-net-era, extra-life instant +1 #8), added per-level background themes (outrun sun + palette per stage) and per-level sound (tonal gameplay sounds transpose per stage). Capped it with a WEIGHTED gift pool (GIFT_WEIGHT + pickGiftType replaces equal-weight GIFT_POOL): routine buffs common, premium/flashy gifts rare, skull present but not overwhelming (gun/wide ~15%, slow ~13%, skull ~11% ... life ~5%). Closes the long-carried '1-in-N drops is a skull' thread from session 183. tsc -b + vite build green (67.11 kB gzip). All committed + pushed to github.com/MotiTheWizerd/breakout.",
   "commits": [
-    "efc5e9c chore: session 184 ritual",
-    "9b19338 feat: wide-paddle power-up (3rd gift)",
-    "90be5cb feat: slow-mo power-up (4th gift)",
-    "5430653 feat: skull power-up — the bad gift (5th gift)"
+    "0d4c33a feat: fireball power-up — piercing ball (6th gift)",
+    "bcdbb6e feat: per-level background themes (outrun sun + palette per stage)",
+    "8ab5cff feat: per-level sound — tonal gameplay sounds transpose per stage",
+    "be7c9d4 feat: extra-life power-up — instant +1 (8th gift)",
+    "803f4e2 feat: weighted gift pool — rarer skulls, tuned drop odds"
   ],
   "open_threads": [
     "GIFT_DROP_CHANCE still at 0.38 (elevated playtest value; comment flags normal ~0.18) — decide ship value",
-    "Gift pool now 5 at EQUAL weight => ~1-in-5 drops is a skull. Consider weighting (fewer skulls) or per-type drop rates",
+    "Skull odds now tuned via GIFT_WEIGHT (~11%) — playtest to confirm the feel is right",
     "*.tsbuildinfo tracked in git — could gitignore + untrack",
-    "More gift ideas: extra life (instant +1), fireball/piercing, safety net, sticky paddle",
+    "More gift ideas: safety net (one-time bottom shield), sticky/catch paddle, laser sweep",
     "No browser tool on Claude side — verification is build + logic + Moti's screenshots, not automated playtest"
   ],
   "authors": ["Moti", "Claude"]

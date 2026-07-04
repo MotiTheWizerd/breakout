@@ -65,5 +65,6 @@ export interface Snapshot {
   level: number
   bricksLeft: number
   highScore: number
+  comboMult: number // current combo multiplier (1 = none); pill shows when >= 2
   powerups: { type: PowerUpType; remaining: number }[]
 }

@@ -22,6 +22,10 @@ export const START_LIVES = 3
 export const MAX_LIVES = 5 // cap for the extra-life gift (keeps the HUD row bounded)
 export const MAX_LEVEL = 6
 
+// combo multiplier — bricks broken in one airborne chain (no paddle touch) score
+// points × min(chain, COMBO_MAX). Paddle contact resets the chain to 0.
+export const COMBO_MAX = 9
+
 // ---- power-ups / gifts ----
 export const GIFT_W = 36
 export const GIFT_H = 22
