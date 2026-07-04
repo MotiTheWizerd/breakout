@@ -3,23 +3,28 @@
   "session_count": 7,
   "date": "2026-07-04",
   "start_time": "12:50",
-  "end_time": null,
-  "status": "active",
+  "end_time": "15:03",
+  "status": "completed",
   "project": "PINGBALL — Breakout (React 19 + Vite 8 + TS, canvas)",
-  "summary": "Big build session on the gift SYSTEM + per-level theming. Grew the power-up set from 5 to 8 (fireball/piercing #6, safety-net-era, extra-life instant +1 #8), added per-level background themes (outrun sun + palette per stage) and per-level sound (tonal gameplay sounds transpose per stage). Capped it with a WEIGHTED gift pool (GIFT_WEIGHT + pickGiftType replaces equal-weight GIFT_POOL): routine buffs common, premium/flashy gifts rare, skull present but not overwhelming (gun/wide ~15%, slow ~13%, skull ~11% ... life ~5%). Closes the long-carried '1-in-N drops is a skull' thread from session 183. tsc -b + vite build green (67.11 kB gzip). All committed + pushed to github.com/MotiTheWizerd/breakout.",
+  "summary": "Two-part session 185. PART 1 (morning): grew power-ups 5→8 (fireball #6, safety-net, extra-life #8), per-level background themes + per-level sound, and a WEIGHTED gift pool. PART 2 (this resume): opened onto an already-active 185 whose session file was 5 commits stale — refreshed it instead of blind-bumping, then shipped a 3-feature arc that crossed the game from feature-rich to feature-rich + skill/score-chase + real level design: (1) weighted gift pool committed (803f4e2), (2) COMBO MULTIPLIER (bd195f1) — airborne brick chains score points×min(chain,9), reset on paddle, HUD ×N pill; (3) SPECIAL BRICK KINDS (20e01e4) — unbreakable solids (excluded from level-clear to avoid deadlock) + explosive bricks (radius blast that chains AND feeds the combo). The three compound: explosive chain → combo spike → score run. Moti playtested live — screenshot showed COMBO ×9 (cap) with 5 gifts stacked (NET/FIRE/SLOW/WIDE/GUN). 'test it its beautiful'. tsc -b + vite build green throughout (67.58 kB gzip). All committed + pushed, tree clean.",
   "commits": [
     "0d4c33a feat: fireball power-up — piercing ball (6th gift)",
     "bcdbb6e feat: per-level background themes (outrun sun + palette per stage)",
     "8ab5cff feat: per-level sound — tonal gameplay sounds transpose per stage",
     "be7c9d4 feat: extra-life power-up — instant +1 (8th gift)",
-    "803f4e2 feat: weighted gift pool — rarer skulls, tuned drop odds"
+    "803f4e2 feat: weighted gift pool — rarer skulls, tuned drop odds",
+    "bd195f1 feat: combo multiplier — chain bricks for escalating score",
+    "20e01e4 feat: special brick kinds — explosive + unbreakable solids"
   ],
   "open_threads": [
-    "GIFT_DROP_CHANCE still at 0.38 (elevated playtest value; comment flags normal ~0.18) — decide ship value",
-    "Skull odds now tuned via GIFT_WEIGHT (~11%) — playtest to confirm the feel is right",
+    "JUICE PASS is the clear next swing: screen shake + hit-stop (no `shake` in engine yet) — a 1-combo and a 9-combo explosive chain currently feel the same weight; this is the payoff layer for everything shipped today",
+    "Dedicated explosion FX (shockwave ring) — blasts currently just fire the existing per-brick particle bursts",
+    "GIFT_DROP_CHANCE still at 0.38 (elevated; comment flags normal ~0.18) — decide ship value",
+    "Skull odds now ~11% via GIFT_WEIGHT — playtest to confirm feel",
     "*.tsbuildinfo tracked in git — could gitignore + untrack",
-    "More gift ideas: safety net (one-time bottom shield), sticky/catch paddle, laser sweep",
-    "No browser tool on Claude side — verification is build + logic + Moti's screenshots, not automated playtest"
+    "Bigger veins mapped this session: enemies, boss final stage, initials leaderboard, mobile touch, MUSIC (zero music, SFX only), more gifts (sticky/laser)",
+    "Combo polish: rising-pitch sound + canvas ×N! flare",
+    "No browser tool on Claude side — verification is build + logic + Moti's screenshots"
   ],
   "authors": ["Moti", "Claude"]
 }
