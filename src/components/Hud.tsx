@@ -6,6 +6,7 @@ const POWERUP_META: Record<PowerUpType, { icon: string; label: string }> = {
   multiball: { icon: '🔴', label: 'MULTI' },
   wide: { icon: '↔️', label: 'WIDE' },
   slow: { icon: '🐢', label: 'SLOW' },
+  shrink: { icon: '💀', label: 'SHRINK' },
 }
 
 export function Hud({ snap, muted, onMute }: { snap: Snapshot; muted: boolean; onMute: () => void }) {

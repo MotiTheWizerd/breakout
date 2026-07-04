@@ -138,6 +138,21 @@ export function render(
       ctx.moveTo(cx, cy)
       ctx.lineTo(cx + 4, cy + 1) // minute hand
       ctx.stroke()
+    } else if (g.type === 'shrink') {
+      // skull: two eye sockets + a nose (the bad gift)
+      ctx.fillStyle = '#2a0508'
+      ctx.beginPath()
+      ctx.arc(cx - 5, cy - 1, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(cx + 5, cy - 1, 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(cx, cy + 1)
+      ctx.lineTo(cx - 2, cy + 5)
+      ctx.lineTo(cx + 2, cy + 5)
+      ctx.closePath()
+      ctx.fill()
     } else {
       // multiball: three little balls
       for (const dx of [-7, 0, 7]) {
@@ -155,15 +170,21 @@ export function render(
   const p = engine.paddle
   const armed = engine.hasPowerup('gun')
   const wide = engine.hasPowerup('wide')
+  const shrunk = engine.hasPowerup('shrink')
   ctx.save()
-  ctx.shadowColor = armed
-    ? 'rgba(255, 158, 61, 0.95)'
-    : wide
-      ? 'rgba(93, 255, 140, 0.9)'
-      : 'rgba(0, 255, 231, 0.9)'
+  ctx.shadowColor = shrunk
+    ? 'rgba(255, 60, 90, 0.95)'
+    : armed
+      ? 'rgba(255, 158, 61, 0.95)'
+      : wide
+        ? 'rgba(93, 255, 140, 0.9)'
+        : 'rgba(0, 255, 231, 0.9)'
   ctx.shadowBlur = 18
   const pg = ctx.createLinearGradient(0, p.y, 0, p.y + p.h)
-  if (armed) {
+  if (shrunk) {
+    pg.addColorStop(0, '#ff9aa8')
+    pg.addColorStop(1, '#e21d3a')
+  } else if (armed) {
     pg.addColorStop(0, '#ffd79a')
     pg.addColorStop(1, '#ff8a2b')
   } else if (wide) {

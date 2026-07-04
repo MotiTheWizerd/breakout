@@ -43,3 +43,7 @@ export const WIDE_DURATION = 12 // seconds of a wider paddle
 // slow-mo — scales the BALL integration dt only (paddle stays full-speed)
 export const SLOW_FACTOR = 0.5 // balls move at half pace while active
 export const SLOW_DURATION = 8 // seconds of slow-motion
+
+// skull — the BAD gift: shrinks the paddle (risk/reward on every drop)
+export const SHRINK_PADDLE_W = 76 // paddle width while shrunk (base 120)
+export const SHRINK_DURATION = 8 // seconds of a shrunken paddle

@@ -7,6 +7,7 @@ import {
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
   WIDE_PADDLE_W, WIDE_DURATION, SLOW_FACTOR, SLOW_DURATION,
+  SHRINK_PADDLE_W, SHRINK_DURATION,
 } from './constants'
 import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -334,8 +335,8 @@ export class BreakoutEngine {
     }
   }
 
-  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow']
-  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275 }
+  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow', 'shrink']
+  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275, shrink: 2 }
 
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
@@ -363,12 +364,23 @@ export class BreakoutEngine {
       this.syncPaddleWidth()
     } else if (type === 'slow') {
       this.timers.set('slow', SLOW_DURATION)
+    } else if (type === 'shrink') {
+      this.timers.set('shrink', SHRINK_DURATION)
+      this.syncPaddleWidth()
     }
   }
 
-  /** Single source of truth for paddle width: wide while the timer is live, base otherwise. */
+  /**
+   * Single source of truth for paddle width. Priority: a live 'shrink' (the bad
+   * gift) suppresses everything — even an active 'wide', which resumes once the
+   * shrink lapses; otherwise 'wide' widens; otherwise base width.
+   */
   private syncPaddleWidth() {
-    this.paddle.w = this.timers.has('wide') ? WIDE_PADDLE_W : PADDLE_W
+    this.paddle.w = this.timers.has('shrink')
+      ? SHRINK_PADDLE_W
+      : this.timers.has('wide')
+        ? WIDE_PADDLE_W
+        : PADDLE_W
   }
 
   /** Split the current balls into more, fanned out at fresh angles. */
