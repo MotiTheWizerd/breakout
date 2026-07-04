@@ -6,6 +6,7 @@ import {
   GIFT_W, GIFT_H, GIFT_FALL_SPEED, GIFT_DROP_CHANCE, GUN_DURATION,
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
+  WIDE_PADDLE_W, WIDE_DURATION,
 } from './constants'
 import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -115,6 +116,7 @@ export class BreakoutEngine {
     this.bullets = []
     this.timers.clear()
     this.fireCooldown = 0
+    this.syncPaddleWidth() // clearing timers must restore base width
   }
 
   /** Reset to a single ball resting on the paddle, awaiting launch. */
@@ -330,8 +332,8 @@ export class BreakoutEngine {
     }
   }
 
-  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball']
-  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190 }
+  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide']
+  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130 }
 
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
@@ -354,7 +356,15 @@ export class BreakoutEngine {
       this.fireCooldown = 0 // fire immediately
     } else if (type === 'multiball') {
       this.spawnMultiball()
+    } else if (type === 'wide') {
+      this.timers.set('wide', WIDE_DURATION)
+      this.syncPaddleWidth()
     }
+  }
+
+  /** Single source of truth for paddle width: wide while the timer is live, base otherwise. */
+  private syncPaddleWidth() {
+    this.paddle.w = this.timers.has('wide') ? WIDE_PADDLE_W : PADDLE_W
   }
 
   /** Split the current balls into more, fanned out at fresh angles. */
@@ -387,6 +397,7 @@ export class BreakoutEngine {
       if (left <= 0) this.timers.delete(type)
       else this.timers.set(type, left)
     }
+    this.syncPaddleWidth() // revert to base width once the 'wide' timer lapses
     if (this.timers.has('gun')) {
       this.fireCooldown -= dt
       if (this.fireCooldown <= 0) {

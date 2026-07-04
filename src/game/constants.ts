@@ -35,3 +35,7 @@ export const FIRE_INTERVAL = 0.26 // seconds between shots while armed
 export const MULTIBALL_ADD = 2 // extra balls spawned on catch
 export const MAX_BALLS = 7
 export const MULTIBALL_SPREAD = (24 * Math.PI) / 180 // fan angle between spawned balls
+
+// wide paddle
+export const WIDE_PADDLE_W = 200 // paddle width while the wide power-up is active (base 120)
+export const WIDE_DURATION = 12 // seconds of a wider paddle

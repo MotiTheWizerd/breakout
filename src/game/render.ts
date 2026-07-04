@@ -108,6 +108,22 @@ export function render(
       ctx.fillStyle = '#20110a'
       ctx.fillRect(cx - 6, cy - 1, 12, 4) // barrel base
       ctx.fillRect(cx - 2, cy - 6, 4, 8) // muzzle up
+    } else if (g.type === 'wide') {
+      // wide: a bar with arrowheads pointing outward (↔)
+      ctx.fillStyle = '#0c2412'
+      ctx.fillRect(cx - 5, cy - 2, 10, 4) // center bar
+      ctx.beginPath() // left arrowhead
+      ctx.moveTo(cx - 11, cy)
+      ctx.lineTo(cx - 5, cy - 5)
+      ctx.lineTo(cx - 5, cy + 5)
+      ctx.closePath()
+      ctx.fill()
+      ctx.beginPath() // right arrowhead
+      ctx.moveTo(cx + 11, cy)
+      ctx.lineTo(cx + 5, cy - 5)
+      ctx.lineTo(cx + 5, cy + 5)
+      ctx.closePath()
+      ctx.fill()
     } else {
       // multiball: three little balls
       for (const dx of [-7, 0, 7]) {
@@ -124,13 +140,21 @@ export function render(
   // paddle
   const p = engine.paddle
   const armed = engine.hasPowerup('gun')
+  const wide = engine.hasPowerup('wide')
   ctx.save()
-  ctx.shadowColor = armed ? 'rgba(255, 158, 61, 0.95)' : 'rgba(0, 255, 231, 0.9)'
+  ctx.shadowColor = armed
+    ? 'rgba(255, 158, 61, 0.95)'
+    : wide
+      ? 'rgba(93, 255, 140, 0.9)'
+      : 'rgba(0, 255, 231, 0.9)'
   ctx.shadowBlur = 18
   const pg = ctx.createLinearGradient(0, p.y, 0, p.y + p.h)
   if (armed) {
     pg.addColorStop(0, '#ffd79a')
     pg.addColorStop(1, '#ff8a2b')
+  } else if (wide) {
+    pg.addColorStop(0, '#b6ffcb')
+    pg.addColorStop(1, '#1fcf5d')
   } else {
     pg.addColorStop(0, '#8afff5')
     pg.addColorStop(1, '#00b7d4')
