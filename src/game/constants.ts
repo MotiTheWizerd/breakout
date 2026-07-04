@@ -47,3 +47,7 @@ export const SLOW_DURATION = 8 // seconds of slow-motion
 // skull — the BAD gift: shrinks the paddle (risk/reward on every drop)
 export const SHRINK_PADDLE_W = 76 // paddle width while shrunk (base 120)
 export const SHRINK_DURATION = 8 // seconds of a shrunken paddle
+
+// fireball — the ball plows STRAIGHT through bricks (no bounce), shattering
+// even tough bricks in one pass. Still bounces off walls + paddle.
+export const FIREBALL_DURATION = 7 // seconds of piercing fire

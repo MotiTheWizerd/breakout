@@ -153,6 +153,17 @@ export function render(
       ctx.lineTo(cx + 2, cy + 5)
       ctx.closePath()
       ctx.fill()
+    } else if (g.type === 'fireball') {
+      // fireball: a little flame teardrop
+      ctx.fillStyle = '#2a1206'
+      ctx.beginPath()
+      ctx.moveTo(cx, cy - 7)
+      ctx.quadraticCurveTo(cx + 6, cy - 1, cx + 4, cy + 4)
+      ctx.quadraticCurveTo(cx + 3, cy + 7, cx, cy + 7)
+      ctx.quadraticCurveTo(cx - 3, cy + 7, cx - 4, cy + 4)
+      ctx.quadraticCurveTo(cx - 6, cy - 1, cx, cy - 7)
+      ctx.closePath()
+      ctx.fill()
     } else {
       // multiball: three little balls
       for (const dx of [-7, 0, 7]) {
@@ -205,13 +216,19 @@ export function render(
   }
   ctx.restore()
 
-  // balls (tinted violet while slow-mo is active)
+  // balls — fireball blazes orange (priority), else slow-mo tints violet
+  const fire = engine.hasPowerup('fireball')
   const slow = engine.hasPowerup('slow')
-  const ballEdge = slow ? '#b06bff' : '#ff2d95'
+  const ballEdge = fire ? '#ff6a12' : slow ? '#b06bff' : '#ff2d95'
+  const ballGlow = fire
+    ? 'rgba(255, 120, 24, 0.98)'
+    : slow
+      ? 'rgba(176, 107, 255, 0.95)'
+      : 'rgba(255, 255, 255, 0.95)'
   for (const b of engine.balls) {
     ctx.save()
-    ctx.shadowColor = slow ? 'rgba(176, 107, 255, 0.95)' : 'rgba(255, 255, 255, 0.95)'
-    ctx.shadowBlur = 20
+    ctx.shadowColor = ballGlow
+    ctx.shadowBlur = fire ? 28 : 20
     const bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r)
     bg.addColorStop(0, '#ffffff')
     bg.addColorStop(1, ballEdge)

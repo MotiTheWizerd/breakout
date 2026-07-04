@@ -27,7 +27,7 @@ export interface Paddle {
   y: number // top y
 }
 
-export type PowerUpType = 'gun' | 'multiball' | 'wide' | 'slow' | 'shrink'
+export type PowerUpType = 'gun' | 'multiball' | 'wide' | 'slow' | 'shrink' | 'fireball'
 
 export interface Gift {
   x: number // left

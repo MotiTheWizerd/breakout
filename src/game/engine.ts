@@ -7,7 +7,7 @@ import {
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
   WIDE_PADDLE_W, WIDE_DURATION, SLOW_FACTOR, SLOW_DURATION,
-  SHRINK_PADDLE_W, SHRINK_DURATION,
+  SHRINK_PADDLE_W, SHRINK_DURATION, FIREBALL_DURATION,
 } from './constants'
 import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -294,6 +294,8 @@ export class BreakoutEngine {
 
   /** Returns true if a brick was hit this call. */
   private collideBricks(b: Ball): boolean {
+    const pierce = this.timers.has('fireball')
+    let hit = false
     for (const br of this.bricks) {
       if (!br.alive) continue
       // circle vs AABB
@@ -302,6 +304,14 @@ export class BreakoutEngine {
       const dx = b.x - nx
       const dy = b.y - ny
       if (dx * dx + dy * dy > b.r * b.r) continue
+
+      if (pierce) {
+        // plow straight through: shatter outright, velocity untouched, and keep
+        // smashing every brick in the ball's path this step (no early return)
+        this.damageBrick(br, b.x, b.y, true)
+        hit = true
+        continue
+      }
 
       // resolve along the axis of shallowest penetration
       const overlapLeft = b.x + b.r - br.x
@@ -319,12 +329,13 @@ export class BreakoutEngine {
       this.damageBrick(br, b.x, b.y)
       return true // one brick per step
     }
-    return false
+    return hit
   }
 
-  /** Apply one hit to a brick; drops a gift and scores if it dies. */
-  private damageBrick(br: Brick, atX: number, atY: number) {
-    br.hp -= 1
+  /** Apply one hit to a brick; drops a gift and scores if it dies. `shatter`
+   *  (fireball) destroys it outright regardless of hp. */
+  private damageBrick(br: Brick, atX: number, atY: number, shatter = false) {
+    br.hp = shatter ? 0 : br.hp - 1
     if (br.hp <= 0) {
       br.alive = false
       this.score += br.points
@@ -335,8 +346,8 @@ export class BreakoutEngine {
     }
   }
 
-  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow', 'shrink']
-  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275, shrink: 2 }
+  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow', 'shrink', 'fireball']
+  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275, shrink: 2, fireball: 18 }
 
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
@@ -367,6 +378,8 @@ export class BreakoutEngine {
     } else if (type === 'shrink') {
       this.timers.set('shrink', SHRINK_DURATION)
       this.syncPaddleWidth()
+    } else if (type === 'fireball') {
+      this.timers.set('fireball', FIREBALL_DURATION)
     }
   }
 
