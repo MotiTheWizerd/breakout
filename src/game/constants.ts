@@ -39,3 +39,7 @@ export const MULTIBALL_SPREAD = (24 * Math.PI) / 180 // fan angle between spawne
 // wide paddle
 export const WIDE_PADDLE_W = 200 // paddle width while the wide power-up is active (base 120)
 export const WIDE_DURATION = 12 // seconds of a wider paddle
+
+// slow-mo — scales the BALL integration dt only (paddle stays full-speed)
+export const SLOW_FACTOR = 0.5 // balls move at half pace while active
+export const SLOW_DURATION = 8 // seconds of slow-motion

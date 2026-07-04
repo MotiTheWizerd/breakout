@@ -124,6 +124,20 @@ export function render(
       ctx.lineTo(cx + 5, cy + 5)
       ctx.closePath()
       ctx.fill()
+    } else if (g.type === 'slow') {
+      // slow-mo: a little clock face
+      ctx.strokeStyle = '#1a0c24'
+      ctx.lineWidth = 2
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.arc(cx, cy, 7, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(cx, cy)
+      ctx.lineTo(cx, cy - 5) // hour hand
+      ctx.moveTo(cx, cy)
+      ctx.lineTo(cx + 4, cy + 1) // minute hand
+      ctx.stroke()
     } else {
       // multiball: three little balls
       for (const dx of [-7, 0, 7]) {
@@ -170,14 +184,16 @@ export function render(
   }
   ctx.restore()
 
-  // balls
+  // balls (tinted violet while slow-mo is active)
+  const slow = engine.hasPowerup('slow')
+  const ballEdge = slow ? '#b06bff' : '#ff2d95'
   for (const b of engine.balls) {
     ctx.save()
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.95)'
+    ctx.shadowColor = slow ? 'rgba(176, 107, 255, 0.95)' : 'rgba(255, 255, 255, 0.95)'
     ctx.shadowBlur = 20
     const bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r)
     bg.addColorStop(0, '#ffffff')
-    bg.addColorStop(1, '#ff2d95')
+    bg.addColorStop(1, ballEdge)
     ctx.fillStyle = bg
     ctx.beginPath()
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2)

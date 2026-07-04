@@ -6,7 +6,7 @@ import {
   GIFT_W, GIFT_H, GIFT_FALL_SPEED, GIFT_DROP_CHANCE, GUN_DURATION,
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
-  WIDE_PADDLE_W, WIDE_DURATION,
+  WIDE_PADDLE_W, WIDE_DURATION, SLOW_FACTOR, SLOW_DURATION,
 } from './constants'
 import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -205,7 +205,9 @@ export class BreakoutEngine {
     }
     if (this.status !== 'playing') return
 
-    this.updateBalls(dt)
+    // slow-mo scales only the ball's clock; paddle/timers/gifts stay real-time
+    const ballDt = this.timers.has('slow') ? dt * SLOW_FACTOR : dt
+    this.updateBalls(ballDt)
     if (this.status !== 'playing') return // ball update may have ended level/game
 
     this.updateTimers(dt)
@@ -332,8 +334,8 @@ export class BreakoutEngine {
     }
   }
 
-  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide']
-  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130 }
+  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow']
+  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275 }
 
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
@@ -359,6 +361,8 @@ export class BreakoutEngine {
     } else if (type === 'wide') {
       this.timers.set('wide', WIDE_DURATION)
       this.syncPaddleWidth()
+    } else if (type === 'slow') {
+      this.timers.set('slow', SLOW_DURATION)
     }
   }
 
