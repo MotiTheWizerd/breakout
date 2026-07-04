@@ -103,10 +103,33 @@ export function render(
   // bricks
   for (const br of engine.bricks) {
     if (!br.alive) continue
-    const light = br.hp < br.maxHp ? 40 : 58
     ctx.save()
-    ctx.shadowColor = `hsla(${br.hue}, 100%, 60%, 0.9)`
-    ctx.shadowBlur = 12
+
+    if (br.kind === 'solid') {
+      // indestructible steel — desaturated gunmetal + corner rivets
+      ctx.shadowColor = 'rgba(190, 200, 220, 0.45)'
+      ctx.shadowBlur = 6
+      const grad = ctx.createLinearGradient(br.x, br.y, br.x, br.y + br.h)
+      grad.addColorStop(0, '#727a8c')
+      grad.addColorStop(1, '#3a3f4d')
+      ctx.fillStyle = grad
+      roundRect(ctx, br.x, br.y, br.w, br.h, 5)
+      ctx.fill()
+      ctx.shadowBlur = 0
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'
+      for (const rx of [br.x + 6, br.x + br.w - 6]) {
+        ctx.beginPath()
+        ctx.arc(rx, br.y + br.h / 2, 1.7, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.restore()
+      continue
+    }
+
+    const explosive = br.kind === 'explosive'
+    const light = br.hp < br.maxHp ? 40 : 58
+    ctx.shadowColor = `hsla(${br.hue}, 100%, 60%, ${explosive ? 1 : 0.9})`
+    ctx.shadowBlur = explosive ? 16 + Math.sin(t * 6) * 5 : 12
     const grad = ctx.createLinearGradient(br.x, br.y, br.x, br.y + br.h)
     grad.addColorStop(0, `hsl(${br.hue}, 100%, ${light + 12}%)`)
     grad.addColorStop(1, `hsl(${br.hue}, 90%, ${light - 14}%)`)
@@ -118,6 +141,14 @@ export function render(
     ctx.fillStyle = 'rgba(255,255,255,0.22)'
     roundRect(ctx, br.x + 2, br.y + 2, br.w - 4, 4, 2)
     ctx.fill()
+    if (explosive) {
+      // pulsing hot core telegraphs the blast
+      const pulse = 0.5 + 0.5 * Math.sin(t * 6)
+      ctx.fillStyle = `rgba(255, 244, 214, ${0.55 + 0.4 * pulse})`
+      ctx.beginPath()
+      ctx.arc(br.x + br.w / 2, br.y + br.h / 2, 3.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
     ctx.restore()
   }
 

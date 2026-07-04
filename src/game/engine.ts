@@ -8,9 +8,9 @@ import {
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
   WIDE_PADDLE_W, WIDE_DURATION, SLOW_FACTOR, SLOW_DURATION,
   SHRINK_PADDLE_W, SHRINK_DURATION, FIREBALL_DURATION,
-  NET_DURATION, NET_Y,
+  NET_DURATION, NET_Y, EXPLOSION_RADIUS,
 } from './constants'
-import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
+import type { Ball, Brick, BrickKind, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
 const HS_KEY = 'pingball.highscore'
 
@@ -94,11 +94,25 @@ export class BreakoutEngine {
     const usableW = WIDTH - BRICK_SIDE_PAD * 2
     const brickW = (usableW - BRICK_GAP * (BRICK_COLS - 1)) / BRICK_COLS
     const bricks: Brick[] = []
+    // special-brick odds ramp with the level: explosives from L2, unbreakable
+    // "solid" bricks from L3 (interior rows only, so the bottom row stays
+    // reachable and solids never wall off the last breakables).
+    const explosiveChance = this.level >= 2 ? Math.min(0.08 + (this.level - 2) * 0.02, 0.16) : 0
+    const solidChance = this.level >= 3 ? 0.05 : 0
     for (let r = 0; r < rows; r++) {
       const tough = r < toughRows
-      const hp = tough ? 2 : 1
-      const hue = 300 - (r / Math.max(rows - 1, 1)) * 260 // magenta -> cyan sweep
+      const baseHue = 300 - (r / Math.max(rows - 1, 1)) * 260 // magenta -> cyan sweep
+      const interior = r >= 1 && r <= rows - 2
       for (let c = 0; c < BRICK_COLS; c++) {
+        let kind: BrickKind = 'normal'
+        if (interior && Math.random() < solidChance) kind = 'solid'
+        else if (Math.random() < explosiveChance) kind = 'explosive'
+        const hp = kind === 'normal' && tough ? 2 : 1
+        const hue = kind === 'explosive' ? 22 : kind === 'solid' ? 220 : baseHue
+        const points =
+          kind === 'solid'
+            ? 0
+            : Math.round((rows - r) * 10 * (kind === 'explosive' ? 1.5 : tough ? 2 : 1))
         bricks.push({
           x: BRICK_SIDE_PAD + c * (brickW + BRICK_GAP),
           y: BRICK_TOP + r * (BRICK_H + BRICK_GAP),
@@ -107,7 +121,8 @@ export class BreakoutEngine {
           hp,
           maxHp: hp,
           hue,
-          points: (rows - r) * 10 * (tough ? 2 : 1),
+          kind,
+          points,
           alive: true,
         })
       }
@@ -188,7 +203,7 @@ export class BreakoutEngine {
       score: this.score,
       lives: this.lives,
       level: this.level,
-      bricksLeft: this.bricks.reduce((n, b) => n + (b.alive ? 1 : 0), 0),
+      bricksLeft: this.bricks.reduce((n, b) => n + (b.alive && b.kind !== 'solid' ? 1 : 0), 0),
       highScore: this.highScore,
       comboMult: Math.min(this.combo, COMBO_MAX),
       powerups: [...this.timers.entries()].map(([type, remaining]) => ({
@@ -247,7 +262,7 @@ export class BreakoutEngine {
         if (this.collideWalls(b)) break // fell off the bottom
         this.collidePaddle(b)
         if (this.collideBricks(b)) {
-          if (this.bricks.every((br) => !br.alive)) {
+          if (this.levelCleared()) {
             this.onLevelCleared()
             return
           }
@@ -319,9 +334,12 @@ export class BreakoutEngine {
 
       if (pierce) {
         // plow straight through: shatter outright, velocity untouched, and keep
-        // smashing every brick in the ball's path this step (no early return)
-        this.damageBrick(br, b.x, b.y, true)
-        hit = true
+        // smashing every brick in the ball's path this step (no early return).
+        // Solids are indestructible — fire phases through them, no bounce.
+        if (br.kind !== 'solid') {
+          this.damageBrick(br, b.x, b.y, true)
+          hit = true
+        }
         continue
       }
 
@@ -345,8 +363,13 @@ export class BreakoutEngine {
   }
 
   /** Apply one hit to a brick; drops a gift and scores if it dies. `shatter`
-   *  (fireball) destroys it outright regardless of hp. */
+   *  (fireball / explosion) destroys it outright regardless of hp. Solids are
+   *  indestructible and just clang. */
   private damageBrick(br: Brick, atX: number, atY: number, shatter = false) {
+    if (br.kind === 'solid') {
+      this.onEvent('wall', atX, atY)
+      return
+    }
     br.hp = shatter ? 0 : br.hp - 1
     if (br.hp <= 0) {
       br.alive = false
@@ -354,8 +377,26 @@ export class BreakoutEngine {
       this.score += br.points * Math.min(this.combo, COMBO_MAX)
       this.onEvent('brick', atX, atY)
       this.maybeDropGift(br)
+      if (br.kind === 'explosive') {
+        this.explode(br.x + br.w / 2, br.y + br.h / 2)
+      }
     } else {
       this.onEvent('wall', atX, atY)
+    }
+  }
+
+  /** Detonate at (cx, cy): shatter every non-solid brick within EXPLOSION_RADIUS.
+   *  Each shattered brick runs through damageBrick, so it feeds the combo AND
+   *  chains through neighbouring explosives (dead bricks are skipped → terminates). */
+  private explode(cx: number, cy: number) {
+    const r2 = EXPLOSION_RADIUS * EXPLOSION_RADIUS
+    for (const br of this.bricks) {
+      if (!br.alive || br.kind === 'solid') continue
+      const bx = br.x + br.w / 2
+      const by = br.y + br.h / 2
+      if ((bx - cx) ** 2 + (by - cy) ** 2 <= r2) {
+        this.damageBrick(br, bx, by, true)
+      }
     }
   }
 
@@ -515,9 +556,14 @@ export class BreakoutEngine {
       if (!consumed) kept.push(bl)
     }
     this.bullets = kept
-    if (hitAny && this.bricks.every((br) => !br.alive)) {
+    if (hitAny && this.levelCleared()) {
       this.onLevelCleared()
     }
+  }
+
+  /** Level is done when every brick is dead OR an indestructible solid. */
+  private levelCleared(): boolean {
+    return this.bricks.every((br) => !br.alive || br.kind === 'solid')
   }
 
   private onLevelCleared() {

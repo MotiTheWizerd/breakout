@@ -26,6 +26,9 @@ export const MAX_LEVEL = 6
 // points × min(chain, COMBO_MAX). Paddle contact resets the chain to 0.
 export const COMBO_MAX = 9
 
+// special bricks — reach (center-to-center px) of an explosive brick's blast
+export const EXPLOSION_RADIUS = 78
+
 // ---- power-ups / gifts ----
 export const GIFT_W = 36
 export const GIFT_H = 22

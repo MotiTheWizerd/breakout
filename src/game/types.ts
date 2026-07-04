@@ -46,6 +46,11 @@ export interface Bullet {
   r: number
 }
 
+export type BrickKind =
+  | 'normal'    // standard, hp-based
+  | 'solid'     // indestructible wall — bounces everything, never clears
+  | 'explosive' // detonates a radius on death, chaining into neighbours
+
 export interface Brick {
   x: number
   y: number
@@ -54,6 +59,7 @@ export interface Brick {
   hp: number
   maxHp: number
   hue: number
+  kind: BrickKind
   points: number
   alive: boolean
 }
