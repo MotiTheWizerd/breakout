@@ -53,6 +53,7 @@ export function useBreakout(canvasRef: React.RefObject<HTMLCanvasElement | null>
       dt = Math.min(dt, 0.05) // clamp big pauses (tab switch)
       acc += dt
 
+      sound.setLevel(engine.level) // tonal sounds play in the current level's key
       engine.update(dt)
       particlesRef.current.update(dt)
       render(ctx, engine, particlesRef.current, acc)
