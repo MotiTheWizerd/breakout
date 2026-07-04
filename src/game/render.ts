@@ -1,4 +1,4 @@
-import { WIDTH, HEIGHT } from './constants'
+import { WIDTH, HEIGHT, NET_Y } from './constants'
 import type { BreakoutEngine } from './engine'
 import type { Particles } from './particles'
 
@@ -204,6 +204,27 @@ export function render(
       ctx.lineTo(cx + 2, cy + 5)
       ctx.closePath()
       ctx.fill()
+    } else if (g.type === 'life') {
+      // extra life: a heart
+      ctx.fillStyle = '#2a0616'
+      ctx.beginPath()
+      ctx.moveTo(cx, cy + 6)
+      ctx.bezierCurveTo(cx - 9, cy - 2, cx - 5, cy - 8, cx, cy - 3)
+      ctx.bezierCurveTo(cx + 5, cy - 8, cx + 9, cy - 2, cx, cy + 6)
+      ctx.closePath()
+      ctx.fill()
+    } else if (g.type === 'net') {
+      // safety net: a shield pentagon
+      ctx.fillStyle = '#08202e'
+      ctx.beginPath()
+      ctx.moveTo(cx, cy - 6)
+      ctx.lineTo(cx + 6, cy - 3)
+      ctx.lineTo(cx + 6, cy + 1)
+      ctx.lineTo(cx, cy + 7)
+      ctx.lineTo(cx - 6, cy + 1)
+      ctx.lineTo(cx - 6, cy - 3)
+      ctx.closePath()
+      ctx.fill()
     } else if (g.type === 'fireball') {
       // fireball: a little flame teardrop
       ctx.fillStyle = '#2a1206'
@@ -266,6 +287,23 @@ export function render(
     ctx.fillRect(p.x + p.w / 2 - 12, p.y - 5, 6, 6)
   }
   ctx.restore()
+
+  // safety-net shield line across the floor while active (animated energy bar)
+  if (engine.hasPowerup('net')) {
+    const pulse = 0.6 + 0.4 * Math.sin(t * 6)
+    ctx.save()
+    ctx.strokeStyle = `rgba(90, 180, 255, ${0.35 + 0.5 * pulse})`
+    ctx.lineWidth = 3
+    ctx.shadowColor = 'rgba(90, 180, 255, 0.95)'
+    ctx.shadowBlur = 16
+    ctx.setLineDash([16, 10])
+    ctx.lineDashOffset = -(t * 60) % 26
+    ctx.beginPath()
+    ctx.moveTo(0, NET_Y)
+    ctx.lineTo(WIDTH, NET_Y)
+    ctx.stroke()
+    ctx.restore()
+  }
 
   // balls — fireball blazes orange (priority), else slow-mo tints violet
   const fire = engine.hasPowerup('fireball')

@@ -8,6 +8,8 @@ const POWERUP_META: Record<PowerUpType, { icon: string; label: string }> = {
   slow: { icon: '🐢', label: 'SLOW' },
   shrink: { icon: '💀', label: 'SHRINK' },
   fireball: { icon: '🔥', label: 'FIRE' },
+  net: { icon: '🛡️', label: 'NET' },
+  life: { icon: '❤️', label: 'LIFE' },
 }
 
 export function Hud({ snap, muted, onMute }: { snap: Snapshot; muted: boolean; onMute: () => void }) {
@@ -28,7 +30,7 @@ export function Hud({ snap, muted, onMute }: { snap: Snapshot; muted: boolean; o
       <div className="hud-cell">
         <span className="hud-label">LIVES</span>
         <span className="hud-lives">
-          {Array.from({ length: START_LIVES }).map((_, i) => (
+          {Array.from({ length: Math.max(START_LIVES, snap.lives) }).map((_, i) => (
             <span key={i} className={i < snap.lives ? 'life on' : 'life'}>●</span>
           ))}
         </span>

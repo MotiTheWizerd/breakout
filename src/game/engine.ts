@@ -2,12 +2,13 @@ import {
   WIDTH, HEIGHT, PADDLE_W, PADDLE_H, PADDLE_MARGIN, PADDLE_SPEED,
   BALL_R, BALL_BASE_SPEED, BALL_SPEED_PER_LEVEL, BALL_MAX_SPEED,
   MAX_BOUNCE_ANGLE, BRICK_COLS, BRICK_GAP, BRICK_TOP, BRICK_SIDE_PAD,
-  BRICK_H, START_LIVES, MAX_LEVEL,
+  BRICK_H, START_LIVES, MAX_LIVES, MAX_LEVEL,
   GIFT_W, GIFT_H, GIFT_FALL_SPEED, GIFT_DROP_CHANCE, GUN_DURATION,
   BULLET_SPEED, BULLET_R, FIRE_INTERVAL,
   MULTIBALL_ADD, MAX_BALLS, MULTIBALL_SPREAD,
   WIDE_PADDLE_W, WIDE_DURATION, SLOW_FACTOR, SLOW_DURATION,
   SHRINK_PADDLE_W, SHRINK_DURATION, FIREBALL_DURATION,
+  NET_DURATION, NET_Y,
 } from './constants'
 import type { Ball, Brick, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -268,6 +269,11 @@ export class BreakoutEngine {
       b.y = b.r
       b.vy = Math.abs(b.vy)
       this.onEvent('wall', b.x, b.y)
+    } else if (b.vy > 0 && b.y + b.r >= NET_Y && this.timers.has('net')) {
+      // safety net: bounce the ball back up instead of losing it
+      b.y = NET_Y - b.r
+      b.vy = -Math.abs(b.vy)
+      this.onEvent('paddle', b.x, b.y)
     } else if (b.y - b.r > HEIGHT) {
       b.dead = true
       return true
@@ -346,8 +352,8 @@ export class BreakoutEngine {
     }
   }
 
-  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow', 'shrink', 'fireball']
-  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275, shrink: 2, fireball: 18 }
+  private static readonly GIFT_POOL: PowerUpType[] = ['gun', 'multiball', 'wide', 'slow', 'shrink', 'fireball', 'net', 'life']
+  private static readonly GIFT_HUE: Record<PowerUpType, number> = { gun: 45, multiball: 190, wide: 130, slow: 275, shrink: 2, fireball: 18, net: 210, life: 330 }
 
   private maybeDropGift(br: Brick) {
     if (Math.random() >= GIFT_DROP_CHANCE) return
@@ -380,6 +386,10 @@ export class BreakoutEngine {
       this.syncPaddleWidth()
     } else if (type === 'fireball') {
       this.timers.set('fireball', FIREBALL_DURATION)
+    } else if (type === 'net') {
+      this.timers.set('net', NET_DURATION)
+    } else if (type === 'life') {
+      this.lives = Math.min(this.lives + 1, MAX_LIVES) // instant +1, capped
     }
   }
 

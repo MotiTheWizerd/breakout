@@ -19,6 +19,7 @@ export const BRICK_SIDE_PAD = 24
 export const BRICK_H = 26
 
 export const START_LIVES = 3
+export const MAX_LIVES = 5 // cap for the extra-life gift (keeps the HUD row bounded)
 export const MAX_LEVEL = 6
 
 // ---- power-ups / gifts ----
@@ -51,3 +52,7 @@ export const SHRINK_DURATION = 8 // seconds of a shrunken paddle
 // fireball — the ball plows STRAIGHT through bricks (no bounce), shattering
 // even tough bricks in one pass. Still bounces off walls + paddle.
 export const FIREBALL_DURATION = 7 // seconds of piercing fire
+
+// safety net — a timed shield across the floor that bounces balls back up
+export const NET_DURATION = 12 // seconds the floor shield lasts
+export const NET_Y = HEIGHT - 8 // y of the shield line, just above the bottom
