@@ -29,6 +29,18 @@ export const COMBO_MAX = 9
 // special bricks — reach (center-to-center px) of an explosive brick's blast
 export const EXPLOSION_RADIUS = 78
 
+// ---- screen shake (juice) ----
+// Trauma model (Squirrel Eiserloh): events add "trauma" (0..1), which decays
+// linearly every frame. Actual shake = trauma² × SHAKE_MAX, so small taps barely
+// register while big explosive combo chains slam — a 1-combo and a 9-combo feel
+// worlds apart. Direction re-randomises per frame for a rattling jitter.
+export const SHAKE_MAX = 16 // px, peak offset at full trauma
+export const SHAKE_DECAY = 2.6 // trauma units drained per second
+export const SHAKE_BRICK = 0.16 // trauma from breaking a brick (base)
+export const SHAKE_COMBO = 0.05 // extra trauma per combo step at break time
+export const SHAKE_EXPLOSION = 0.45 // trauma from an explosive detonation
+export const SHAKE_LOSE = 0.7 // trauma when a life is lost
+
 // ---- power-ups / gifts ----
 export const GIFT_W = 36
 export const GIFT_H = 22

@@ -98,6 +98,16 @@ export function render(
   particles: Particles,
   t: number,
 ) {
+  // screen shake: translate the whole scene by the engine's trauma offset. Fill
+  // a solid backdrop first so a hard shake never exposes an unpainted edge.
+  const shake = engine.getShake()
+  ctx.save()
+  if (shake.x !== 0 || shake.y !== 0) {
+    ctx.fillStyle = '#05000c'
+    ctx.fillRect(0, 0, WIDTH, HEIGHT)
+    ctx.translate(shake.x, shake.y)
+  }
+
   drawBackground(ctx, t, engine.level)
 
   // bricks
@@ -358,4 +368,6 @@ export function render(
     ctx.fill()
     ctx.restore()
   }
+
+  ctx.restore() // end screen-shake transform
 }

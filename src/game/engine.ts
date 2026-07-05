@@ -9,6 +9,7 @@ import {
   WIDE_PADDLE_W, WIDE_DURATION, SLOW_FACTOR, SLOW_DURATION,
   SHRINK_PADDLE_W, SHRINK_DURATION, FIREBALL_DURATION,
   NET_DURATION, NET_Y, EXPLOSION_RADIUS,
+  SHAKE_MAX, SHAKE_DECAY, SHAKE_BRICK, SHAKE_COMBO, SHAKE_EXPLOSION, SHAKE_LOSE,
 } from './constants'
 import type { Ball, Brick, BrickKind, Bullet, GameStatus, Gift, Paddle, PowerUpType, Snapshot } from './types'
 
@@ -46,6 +47,9 @@ export class BreakoutEngine {
 
   // combo — bricks broken in the current airborne chain (reset on paddle contact)
   private combo = 0
+
+  // screen-shake trauma (0..1), decays each frame; see getShake()
+  private trauma = 0
 
   /** Fired when a scoring / feedback event happens, for sound + particles. */
   onEvent: (
@@ -215,7 +219,24 @@ export class BreakoutEngine {
 
   // ---- simulation ----
 
+  /** Add screen-shake trauma, clamped to 1 (the peak). */
+  private addTrauma(amount: number) {
+    this.trauma = Math.min(1, this.trauma + amount)
+  }
+
+  /** Current shake offset (px) for the renderer to translate the scene by.
+   *  Magnitude eases as trauma² so light hits barely nudge; direction is fresh
+   *  each frame so the screen rattles rather than drifting. */
+  getShake(): { x: number; y: number } {
+    if (this.trauma <= 0) return { x: 0, y: 0 }
+    const mag = this.trauma * this.trauma * SHAKE_MAX
+    const angle = Math.random() * Math.PI * 2
+    return { x: Math.cos(angle) * mag, y: Math.sin(angle) * mag }
+  }
+
   update(dt: number) {
+    // trauma bleeds off every frame, regardless of game status
+    if (this.trauma > 0) this.trauma = Math.max(0, this.trauma - SHAKE_DECAY * dt)
     this.updatePaddle(dt)
 
     if (this.status === 'ready') {
@@ -375,9 +396,12 @@ export class BreakoutEngine {
       br.alive = false
       this.combo += 1
       this.score += br.points * Math.min(this.combo, COMBO_MAX)
+      // shake scales with the live combo — deeper chains hit harder
+      this.addTrauma(SHAKE_BRICK + Math.min(this.combo, COMBO_MAX) * SHAKE_COMBO)
       this.onEvent('brick', atX, atY)
       this.maybeDropGift(br)
       if (br.kind === 'explosive') {
+        this.addTrauma(SHAKE_EXPLOSION)
         this.explode(br.x + br.w / 2, br.y + br.h / 2)
       }
     } else {
@@ -579,6 +603,7 @@ export class BreakoutEngine {
 
   private loseLife() {
     this.lives -= 1
+    this.addTrauma(SHAKE_LOSE)
     if (this.lives <= 0) {
       this.saveHighScore()
       this.status = 'gameover'
